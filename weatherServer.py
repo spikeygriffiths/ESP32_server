@@ -53,7 +53,7 @@ def owmToSym(symbolVar):
 def GetWorstWeather(detail):
     global symText, symSym, severestGroup, severestSub
     global maxTemp, minTemp
-    global maxWind, windText
+    global maxWind, windText, windDir
     if detail.tag == "symbol":
         symbolText = detail.attrib["name"] # eg "Broken clouds"
         symbolNumber = int(detail.attrib["number"]) # Group 2xx=Thunderstorm, 3xx=Drizzle, 5xx=Rain, 6xx=Snow, 7xx=Atmosphere, 800=Clear, 8xx=Clouds
@@ -103,11 +103,14 @@ def GetWorstWeather(detail):
         if speed > maxWind:
             maxWind = speed
             windText = detail.attrib["name"]
+    if detail.tag == "windDirection":
+        dir = round(float(detail.attrib["deg"]))
+        windDir = dir # Might want to try averaging wind direction, rather than just getting last one?
 
 def SetDefaultForecast():
     global symText, symSym, severestSymbol, severestGroup, severestSub
     global maxTemp, minTemp
-    global maxWind, windText
+    global maxWind, windText, windDir
     severestSymbol = 800 # 800, Clear sky by default
     severestGroup = int(severestSymbol/100)
     severestSub = severestSymbol % 100
@@ -126,7 +129,7 @@ def GetWeatherForecast():
     global forecastPeriod
     global symText, symSym, severestSymbol, severestGroup, severestSub
     global maxTemp, minTemp
-    global maxWind, windText
+    global maxWind, windText, windDir
     forecastPeriod = "N/A"
     req = request.Request("https://api.openweathermap.org/data/2.5/forecast?q="+owmLocation+"&mode=xml&appid="+owmApiKey)
     response = request.urlopen(req)
@@ -151,6 +154,26 @@ def GetWeatherForecast():
         severestSymbol = severestGroup * 100 + severestSub
         # ToDo: Convert severestSymbol from OWM to Sym format
 
+def MakeText():
+    global forecastPeriod
+    global symText, symSym, severestSymbol, severestGroup, severestSub
+    global maxTemp, minTemp
+    global maxWind, windText, windDir
+    weatherDict = dict()
+    weatherDict["period"] = forecastPeriod
+    weatherDict["icon"] = str(symSym)[4:]
+    weatherDict["synopsis"] = symText+" & "+windText
+    weatherDict["maxTemp"] = str(round(maxTemp))+"C"
+    weatherDict["minTemp"] = str(round(minTemp))+"C"
+    weatherDict["windSpeed"] = str(round(maxWind))+"kph"
+    weatherDict["windDir"] = str(windDir)
+    weatherDict["timeDigits"] = str(datetime.now().strftime("%H:%M"))
+    return str(weatherDict)  # Ready for sending via socket to client
+
+def UpdateText():
+    GetWeatherForecast()
+    return MakeText()
+
 # Main entry point
 global forecastPeriod
 global symText, symSym
@@ -159,26 +182,24 @@ global maxWind, windText
 s = socket.socket() #socket.AF_INET, socket.SOCK_STREAM)
 host = ''  #socket.gethostname()
 port = 54321
-GetWeatherForecast()
-weatherDict = dict()
-weatherDict["period"] = forecastPeriod
-weatherDict["icon"] = str(symSym)[4:]
-weatherDict["synopsis"] = symText+" & "+windText
-weatherDict["maxTemp"] = str(round(maxTemp))+"C"
-weatherDict["minTemp"] = str(round(minTemp))+"C"
-weatherDict["windSpeed"] = str(round(maxWind))
-#weatherDict["windDir"] = str(windDir)
-weatherDict["timeDigits"] = str(datetime.now().strftime("%H:%M"))
-txt=str(weatherDict)
-print(txt)
-#exit()
+dictText = UpdateText()
+updateTime = time.time()
+print(dictText)
 s.bind((host, port))
 s.listen()
-#s.settimeout(0.1)
+print("Listening with", host,"on port", port)
+s.setblocking(0) # Non-blocking socket
 while True:
-    print("Listening with", host,"on port", port)
-    client, addr = s.accept()
-    print ('Got connection from',addr)
-    client.send(bytes(txt, "utf-8"))
-    client.close()
+    if time.time() - updateTime > 600:
+        dictText = UpdateText()
+        updateTime = time.time()
+        print(dictText)
+    try:
+        client, addr = s.accept()
+    except:
+        continue
+    else:
+        print ('Got connection from',addr)
+        client.send(bytes(dictText, "utf-8"))
+        client.close()
     time.sleep(1) # 1 sec
