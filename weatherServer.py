@@ -165,7 +165,7 @@ def MakeText():
     weatherDict["synopsis"] = symText+" & "+windText
     weatherDict["maxTemp"] = str(round(maxTemp))+"C"
     weatherDict["minTemp"] = str(round(minTemp))+"C"
-    weatherDict["windSpeed"] = str(round(maxWind))+"kph"
+    weatherDict["windSpeed"] = str(round(maxWind))
     weatherDict["windDir"] = str(windDir)
     weatherDict["timeDigits"] = str(datetime.now().strftime("%H:%M"))
     return str(weatherDict)  # Ready for sending via socket to client
@@ -200,6 +200,7 @@ while True:
         continue
     else:
         print ('Got connection from',addr)
+        dictText = MakeText() # Keep time up to date
         client.send(bytes(dictText, "utf-8"))
         client.close()
     time.sleep(1) # 1 sec
