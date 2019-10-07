@@ -120,6 +120,19 @@ def SetDefaultForecast():
     maxTemp = -20.0 # Silly high temp
     maxWind = 0
 
+def SetUnknownForecast():
+    global cloudText, symSym, severestSymbol, severestGroup, severestSub
+    global maxTemp, minTemp
+    global maxWind, windText, windDir
+    severestSymbol = 800 # 800, Clear sky by default
+    severestGroup = int(severestSymbol/100)
+    severestSub = severestSymbol % 100
+    cloudText = "Weather unavailable"
+    symSym = Sym.Unknown
+    minTemp = 50.0 # Silly low temp
+    maxTemp = -20.0 # Silly high temp
+    maxWind = 0
+
 def GetForecastSlot(forecastSlot):
     for detail in forecastSlot:
         GetWorstWeather(detail) # Need to compare symbolNumber vs previous one to get most extreme weather
@@ -131,38 +144,41 @@ def GetWeatherForecast():
     global maxTemp, minTemp
     global maxWind, windText, windDir
     forecastPeriod = "N/A"
-    req = request.Request("https://api.openweathermap.org/data/2.5/forecast?q="+owmLocation+"&mode=xml&appid="+owmApiKey)
-    response = request.urlopen(req)
-    root = ET.fromstring(response.read())
     SetDefaultForecast()
-    for child in root:
-        if child.tag == "forecast":
-            for forecastSlot in child:
-                #print(startTime.attrib["from"])
-                start = (datetime.strptime(forecastSlot.attrib["from"],"%Y-%m-%dT%H:%M:%S"))
-                if start.date()==datetime.now().date():
-                    print(start.time())
-                    if datetime.now().time() < dayEnd.time():
-                        if start.time() > dayStart.time() and start.time() < dayEnd.time():
-                            forecastPeriod = "Day"
-                            GetForecastSlot(forecastSlot)
-                    else:
-                        if start.time() > eveStart.time() and start.time() < eveEnd.time():
-                            forecastPeriod = "Eve"
-                            GetForecastSlot(forecastSlot)
+    req = request.Request("https://api.openweathermap.org/data/2.5/forecast?q="+owmLocation+"&mode=xml&appid="+owmApiKey)
+    try:
+        response = request.urlopen(req)
+        root = ET.fromstring(response.read())
+        for child in root:
+            if child.tag == "forecast":
+                for forecastSlot in child:
+                    #print(startTime.attrib["from"])
+                    start = (datetime.strptime(forecastSlot.attrib["from"],"%Y-%m-%dT%H:%M:%S"))
+                    if start.date()==datetime.now().date():
+                        print(start.time())
+                        if datetime.now().time() < dayEnd.time():
+                            if start.time() > dayStart.time() and start.time() < dayEnd.time():
+                                forecastPeriod = "Day"
+                                GetForecastSlot(forecastSlot)
+                        else:
+                            if start.time() > eveStart.time() and start.time() < eveEnd.time():
+                                forecastPeriod = "Eve"
+                                GetForecastSlot(forecastSlot)
+    except:
+        SetUnknownForecast()
     if forecastPeriod!="N/A":
         severestSymbol = severestGroup * 100 + severestSub
-        # ToDo: Convert severestSymbol from OWM to Sym format
 
 def GetTimeInWords():
-    numbers = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve']
+    numbers = ['Twelve', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve']
     hours = datetime.now().hour % 12
     minutes = datetime.now().minute
     if minutes >= 33: hours = hours + 1 # For "Quarter to ..."
     if hours > 12: hours = 1
     hourTxt = numbers[hours]
-    if (minutes > 58) or (minutes < 3):
-        return hourTxt + " o'clock"
+    #return "This line should be two lines"
+    if (minutes >= 58) or (minutes < 3):
+        return hourTxt + " o\'clock"
     elif minutes < 8:
         return "Five past " + hourTxt
     elif minutes < 13:
