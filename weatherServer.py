@@ -225,10 +225,6 @@ def MakeText():
     weatherDict["monthText"] = str(now.strftime("%B"))
     return str(weatherDict)  # Ready for sending via socket to client
 
-def UpdateText():
-    GetWeatherForecast()
-    return MakeText()
-
 # Main entry point
 global forecastPeriod
 global cloudText, symSym
@@ -237,25 +233,22 @@ global maxWind, windText
 s = socket.socket() #socket.AF_INET, socket.SOCK_STREAM)
 host = ''  #socket.gethostname()
 port = 54321
-dictText = UpdateText()
-updateTime = time.time()
-print(dictText)
+updateWeather = time.time() # Update weather immediately after start
 s.bind((host, port))
 s.listen()
 print("Listening with", host,"on port", port)
 s.setblocking(0) # Non-blocking socket
 while True:
-    if time.time() - updateTime > 600:
-        dictText = UpdateText()
-        updateTime = time.time()
-        print(dictText)
+    if time.time() >= updateWeather:
+        GetWeatherForecast()
+        updateWeather = time.time() + 600 # Only get weather forecast every 10 mins
     try:
         client, addr = s.accept()
     except:
         continue
     else:
-        print ('Got connection from',addr)
         dictText = MakeText() # Keep time up to date
+        print("Sending:", dictText)
         client.send(bytes(dictText, "utf-8"))
         client.close()
     time.sleep(1) # 1 sec
