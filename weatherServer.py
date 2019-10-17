@@ -127,11 +127,13 @@ def SetUnknownForecast():
     severestSymbol = 800 # 800, Clear sky by default
     severestGroup = int(severestSymbol/100)
     severestSub = severestSymbol % 100
-    cloudText = "Weather unavailable"
+    cloudText = "N/A"
     symSym = Sym.Unknown
     minTemp = 50.0 # Silly low temp
     maxTemp = -20.0 # Silly high temp
     maxWind = 0
+    windText = "N/A"
+    windDir = 0
 
 def GetForecastSlot(forecastSlot):
     for detail in forecastSlot:
