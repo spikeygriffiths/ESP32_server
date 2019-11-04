@@ -1,8 +1,12 @@
-# Weather.py
+#!Weather.py
 
+import time
 from urllib import request, parse
 import xml.etree.ElementTree as ET
 from enum import Enum, auto
+from datetime import datetime
+# My modules
+import Events
 
 owmApiKey = "590c17ed39950e5bc6648c3f83918987"
 owmLocation = "Cambridge,UK"
@@ -171,18 +175,9 @@ def GetWeatherForecast():
 
 def EventHandler(eventId, eventArg):
     global updateWeather
-    if EVENT.POSTINIT == eventId:
+    if Events.ids.POSTINIT == eventId:
         updateWeather = time.time() # Update weather immediately after start
-    if EVENT.SEC == eventId:
+    if Events.ids.SEC == eventId:
         if time.time() >= updateWeather:
             GetWeatherForecast()
             updateWeather = time.time() + 600 # Only get weather forecast every 10 mins
-        try:
-            client, addr = s.accept()
-        except:
-            continue
-        else:
-            dictText = Report.MakeText() # Keep time up to date
-            print("Sending:", dictText)
-            client.send(bytes(dictText, "utf-8"))
-            client.close()

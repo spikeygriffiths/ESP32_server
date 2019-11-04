@@ -1,8 +1,10 @@
-# BluetoothSocket.py
+#!BluetoothSocket.py
 
 # Finds ESP32 devices (or anything that advertises itself as "*ESP32*"
 
-import bluetooth
+from bluetooth import *
+# My modules
+import Events
 
 def BluetoothFindEsp():
     global espBtMac
@@ -19,14 +21,15 @@ def BluetoothInitEsp():
 
 def EventHandler(eventId, eventArg):
     global BTsocket, espBtMac
-    if EVENT.POSTINIT == eventId:
+    if Events.ids.POSTINIT == eventId:
+        espBtMac = None # Until we know better
         # ToDo:  Need a state-driven Bluetooth system to:
         #   find ESP32,
         #   create a socket,
         #   wait for a request from the ESP,
         #   then send the report
-    if EVENT.SEC == eventId:
-        if espBtMac != NULL:
+    if Events.ids.SEC == eventId:
+        if espBtMac != None:
             BTsocket.connect(espBtMac, 1)
             dictText = MakeText() # Keep time up to date
             print("Bluetooth sending:", dictText)

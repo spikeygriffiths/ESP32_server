@@ -1,4 +1,6 @@
-#Report.py
+#!Report.py
+
+import Events
 import time
 from datetime import datetime
 
