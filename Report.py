@@ -1,6 +1,7 @@
 #!Report.py
 
 import Events
+import Weather
 import time
 from datetime import datetime
 
@@ -39,19 +40,19 @@ def GetTimeInWords():
     return "Can't get here!"
 
 def MakeText():
-    global forecastPeriod
-    global cloudText, symSym, severestSymbol, severestGroup, severestSub
-    global maxTemp, minTemp
-    global maxWind, windText, windDir
+    #global forecastPeriod
+    #global cloudText, symSym, severestSymbol, severestGroup, severestSub
+    #global maxTemp, minTemp
+    #global maxWind, windText, windDir
     weatherDict = dict()
-    weatherDict["period"] = forecastPeriod
-    weatherDict["icon"] = str(symSym)[4:]
-    weatherDict["cloudText"] = cloudText
-    weatherDict["maxTemp"] = str(round(maxTemp))+"C"
-    weatherDict["minTemp"] = str(round(minTemp))+"C"
-    weatherDict["windSpeed"] = str(round(maxWind))
-    weatherDict["windDir"] = str(windDir)
-    weatherDict["windText"] = windText
+    weatherDict["period"] = Weather.forecastPeriod
+    weatherDict["icon"] = str(Weather.symSym)[4:]
+    weatherDict["cloudText"] = Weather.cloudText
+    weatherDict["maxTemp"] = str(round(Weather.maxTemp))+"C"
+    weatherDict["minTemp"] = str(round(Weather.minTemp))+"C"
+    weatherDict["windSpeed"] = str(round(Weather.maxWind))
+    weatherDict["windDir"] = str(Weather.windDir)
+    weatherDict["windText"] = Weather.windText
     now = datetime.now()
     weatherDict["timeDigits"] = str(now.strftime("%H:%M"))
     weatherDict["timeText"] = GetTimeInWords()
